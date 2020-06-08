@@ -1,6 +1,5 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -16,15 +15,20 @@ using Object = UnityEngine.Object;
 /// <summary>
 /// Helper class to automagically convert Unity Text and InputFields to TextMeshPro
 /// Warning: This script might contain bugs, as it is a result of a community effort
-/// Warning: You have to manually set rename all your uGUI Text and InputFields in your script, and reference the new TextMeshPro components
+/// Warning: You have to manually rename all your uGUI Text and InputFields in your script, and reference the new TextMeshPro components
 /// This script was originally created by: BRUNO MIKOSKI (http://www.brunomikoski.com/playground/2015/3/31/convert-text-component-to-textmeshprougui-keeping-configurations)
 /// The script was then modified by: SIMON TYSLAND (https://tinyurl.com/simtys)
 /// </summary>
 public class TextMeshProAutoConverter : EditorWindow
 {
     public List<ReplaceFont> ReplaceFonts = new List<ReplaceFont>();
-    public int HowManyLoops = 10;
+    public int HowManyLoops = 50;
     private int _currentSize;
+    private int _totalTexts;
+    private int _textAssetsChanged;
+    private int _inputFieldAssetsChanged;
+    private int _textAssetsFound;
+    private int _inputFieldAssetsFound;
 
     private const string PROGRESSBAR_TITLE_TEXT = "Converting Text components to TextMeshProUGUI";
     private const string PROGRESSBAR_DESC_TEXT = "Using some heavy black magic here (not), so this might take a while, please hold on";
@@ -40,29 +44,76 @@ public class TextMeshProAutoConverter : EditorWindow
     private void OnGUI()
     {
         int newSize = EditorGUILayout.IntField("Number of Font Assets:", _currentSize);
-        if (newSize != _currentSize)
+
+        if (newSize > 0 && newSize != _currentSize)
         {
             _currentSize = newSize;
-            ReplaceFonts = new List<ReplaceFont>();
-            for (int i = 0; i < _currentSize; i++)
+
+            if (ReplaceFonts.Count == 0)
             {
-                ReplaceFonts.Add(new ReplaceFont());
+                for (int i = 0; i < _currentSize; i++)
+                {
+                    ReplaceFonts.Add(new ReplaceFont());
+                }
             }
+            else if (ReplaceFonts.Count > _currentSize)
+            {
+                ReplaceFonts.RemoveRange(_currentSize, ReplaceFonts.Count - _currentSize);
+            }
+            else if (ReplaceFonts.Count < _currentSize)
+            {
+                for (int i = 0; i < _currentSize - ReplaceFonts.Count; i++)
+                {
+                    ReplaceFonts.Add(new ReplaceFont());
+                }
+            }
+
+            _totalTexts = Resources.FindObjectsOfTypeAll<Text>().Count();
+            _totalTexts += Resources.FindObjectsOfTypeAll<InputField>().Length;
         }
 
+        EditorGUILayout.BeginVertical();
+        EditorGUILayout.LabelField("Font assets:");
         foreach (ReplaceFont replaceFont in ReplaceFonts)
-        {
+        { 
             EditorGUILayout.BeginHorizontal();
             replaceFont.OriginalFont = (Font)EditorGUILayout.ObjectField(replaceFont.OriginalFont, typeof(Font), false);
-            EditorGUILayout.PrefixLabel(" to: ");
+            EditorGUILayout.PrefixLabel("  to -> ");
             replaceFont.TargetFont = (TMP_FontAsset)EditorGUILayout.ObjectField(replaceFont.TargetFont, typeof(TMP_FontAsset), false);
             EditorGUILayout.EndHorizontal();
         }
+        EditorGUILayout.EndVertical();
+        
 
         HowManyLoops = EditorGUILayout.IntField("Loops: ", HowManyLoops);
 
+        EditorGUILayout.BeginVertical("Box");
+        if (_totalTexts > 0)
+        {
+            EditorGUILayout.LabelField("Total Text/InputField assets found in scene:  " + _totalTexts);
+            if (_textAssetsChanged > 0 || _inputFieldAssetsChanged > 0 || _textAssetsFound > 0 || _inputFieldAssetsFound > 0)
+            {
+                EditorGUILayout.LabelField("-----------");
+                EditorGUILayout.LabelField("Text assets found:  " + _textAssetsFound);
+                EditorGUILayout.LabelField("Text assets changed:  " + _textAssetsChanged);
+                EditorGUILayout.LabelField("Input Field assets found:  " + _inputFieldAssetsFound);
+                EditorGUILayout.LabelField("Input Field assets changed:  " + _inputFieldAssetsChanged);
+            }
+        }
+        else
+        {
+            EditorGUILayout.LabelField("Please assign font assets in the fields (above)");
+            EditorGUILayout.LabelField("Change \"number of font assets\" if list is empty (above)");
+        }
+
+        EditorGUILayout.EndVertical();
+
         if (GUILayout.Button("Execute!"))
         {
+            _textAssetsChanged = 0;
+            _inputFieldAssetsChanged = 0;
+            _textAssetsFound = 0;
+            _inputFieldAssetsFound = 0;
             var allTextObjects = Resources.FindObjectsOfTypeAll<Text>();
             List<Text> uniqueTexts = new List<Text>();
             foreach (Text text in allTextObjects)
@@ -73,8 +124,8 @@ public class TextMeshProAutoConverter : EditorWindow
                 }
             }
 
-            Debug.Log("Trying to convert Text components. Total text components founds: " + uniqueTexts.Count);
-
+            _textAssetsFound = uniqueTexts.Count;
+            
             for (int i = 0; i < uniqueTexts.Count; i++)
             {
                 if (i >= HowManyLoops)
@@ -170,8 +221,8 @@ public class TextMeshProAutoConverter : EditorWindow
 
             EditorUtility.ClearProgressBar();
 
-            Debug.Log("Trying to convert InputField components. Total InputField components founds: " + uniqueInputFields.Count);
-
+            _inputFieldAssetsFound = uniqueInputFields.Count;
+            
             for (int i = 0; i < uniqueInputFields.Count; i++)
             {
                 if (i >= HowManyLoops)
@@ -257,10 +308,10 @@ public class TextMeshProAutoConverter : EditorWindow
 
         EditorUtility.ClearProgressBar();
 
-        if (GUILayout.Button("Find missing references in scene"))
-        {
-            FindMissingReferencesInCurrentScene();
-        }
+        // if (GUILayout.Button("Find missing references in scene"))
+        // {
+        //     FindMissingReferencesInCurrentScene();
+        // }
     }
 
     private void SwapTextComponents(Text textComponent, GameObject textObject)
@@ -328,9 +379,18 @@ public class TextMeshProAutoConverter : EditorWindow
 
         textMeshPro.color = textHolderObject.Color;
 
-        textMeshPro.enableWordWrapping = textHolderObject.HorizontalOverflow != HorizontalWrapMode.Wrap;
-
-        textMeshPro.overflowMode = GetOverflowMode(textHolderObject.VerticalOverflow);
+        textMeshPro.enableWordWrapping = true;
+        textMeshPro.overflowMode = TextOverflowModes.Truncate;
+        if (textHolderObject.HorizontalOverflow == HorizontalWrapMode.Overflow)
+        {
+            textMeshPro.enableWordWrapping = false;
+            textMeshPro.overflowMode = TextOverflowModes.Overflow;
+        }
+        else if (textHolderObject.VerticalOverflow == VerticalWrapMode.Overflow)
+        {
+            textMeshPro.enableWordWrapping = true;
+            textMeshPro.overflowMode = TextOverflowModes.Overflow;
+        }
 
         textMeshPro.text = textHolderObject.Text;
 
@@ -357,14 +417,15 @@ public class TextMeshProAutoConverter : EditorWindow
                 textMeshPro.fontStyle = FontStyles.Italic;
                 break;
             case FontStyle.BoldAndItalic:
-                textMeshPro.fontStyle = FontStyles.Bold;
-                textMeshPro.fontStyle = FontStyles.Italic;
+                textMeshPro.fontStyle = FontStyles.Bold | FontStyles.Italic;
                 break;
         }
 
         textMeshPro.fontSizeMin = textHolderObject.ResizeTextMinSize;
+        _textAssetsChanged++;
+        EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
     }
-
+    
     private void SwapInputFieldComponents(InputField uInput)
     {
         if (uInput != null)
@@ -542,6 +603,8 @@ public class TextMeshProAutoConverter : EditorWindow
             Debug.LogWarning(sb.ToString(), newInputField.gameObject);
 
             DestroyImmediate(tempInputFieldObj, true);
+            _inputFieldAssetsChanged++;
+            EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
         }
         else
         {
@@ -549,15 +612,15 @@ public class TextMeshProAutoConverter : EditorWindow
         }
     }
 
-    private TextOverflowModes GetOverflowMode(VerticalWrapMode verticalOverflow)
-    {
-        if (verticalOverflow == VerticalWrapMode.Truncate)
-        {
-            return TextOverflowModes.Truncate;
-        }
-
-        return TextOverflowModes.Overflow;
-    }
+    // private TextOverflowModes GetOverflowMode(VerticalWrapMode verticalOverflow)
+    // {
+    //     if (verticalOverflow == VerticalWrapMode.Truncate)
+    //     {
+    //         return TextOverflowModes.Truncate;
+    //     }
+    //
+    //     return TextOverflowModes.Overflow;
+    // }
 
     private TextAlignmentOptions GetAligmentFromTextObject(TextAnchor alignment)
     {
@@ -627,19 +690,19 @@ public class TextMeshProAutoConverter : EditorWindow
         return null;
     }
 
-//    [MenuItem("Tools/Show Missing Object References in scene", false, 50)]
-//    public static void FindMissingReferencesInCurrentScene()
-//    {
-//        var objects = GetSceneObjects();
-//        FindMissingReferences(SceneManager.GetActiveScene().name, objects);
-//    }
-//
-//    private static GameObject[] GetSceneObjects()
-//    {
-//        return Resources.FindObjectsOfTypeAll<GameObject>()
-//                        .Where(go => string.IsNullOrEmpty(AssetDatabase.GetAssetPath(go))
-//                                     && go.hideFlags == HideFlags.None).ToArray();
-//    }
+    //    [MenuItem("Tools/Show Missing Object References in scene", false, 50)]
+    //    public static void FindMissingReferencesInCurrentScene()
+    //    {
+    //        var objects = GetSceneObjects();
+    //        FindMissingReferences(SceneManager.GetActiveScene().name, objects);
+    //    }
+    //
+    //    private static GameObject[] GetSceneObjects()
+    //    {
+    //        return Resources.FindObjectsOfTypeAll<GameObject>()
+    //                        .Where(go => string.IsNullOrEmpty(AssetDatabase.GetAssetPath(go))
+    //                                     && go.hideFlags == HideFlags.None).ToArray();
+    //    }
 
     private const string ERROR_STRING = "Missing Ref in: [{3}]{0}. Component: {1}, Property: {2}";
     private const string CAUTION_STRING = "We can't update: [{3}]{0}. Component: {1}, Property: {2}";
@@ -721,25 +784,26 @@ public class TextMeshProAutoConverter : EditorWindow
                 obj = GetValue_Imp(obj, element);
             }
         }
+
         return obj;
     }
 
-            private static object GetValue_Imp(object source, string name, int index)
-        {
-            var enumerable = GetValue_Imp(source, name) as System.Collections.IEnumerable;
-            if (enumerable == null) return null;
-            var enm = enumerable.GetEnumerator();
-            //while (index-- >= 0)
-            //    enm.MoveNext();
-            //return enm.Current;
+    private static object GetValue_Imp(object source, string name, int index)
+    {
+        var enumerable = GetValue_Imp(source, name) as System.Collections.IEnumerable;
+        if (enumerable == null) return null;
+        var enm = enumerable.GetEnumerator();
+        //while (index-- >= 0)
+        //    enm.MoveNext();
+        //return enm.Current;
 
-            for (int i = 0; i <= index; i++)
-            {
-                if (!enm.MoveNext()) return null;
-            }
-            return enm.Current;
+        for (int i = 0; i <= index; i++)
+        {
+            if (!enm.MoveNext()) return null;
         }
 
+        return enm.Current;
+    }
 
     private static object GetValue_Imp(object source, string name)
     {
@@ -759,6 +823,7 @@ public class TextMeshProAutoConverter : EditorWindow
 
             type = type.BaseType;
         }
+
         return null;
     }
 

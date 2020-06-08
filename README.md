@@ -3,6 +3,7 @@
 ![gif](https://i.imgur.com/A3Gx71W.gif)  
 Helper Tool to automatically convert all of your Unity Text and InputFields to TextMeshPro equivalent components
 
+**Warning**: To use this tool, you need to place the script inside an Editor folder
 **Warning**: This script might contain bugs, as it is a result of a community effort  
 **Warning**: You have to manually rename all your uGUI Text and InputFields in your script, and reference the new TextMeshPro components  
 
@@ -12,7 +13,7 @@ The script was then modified by: SIMON TYSLAND (https://tinyurl.com/simtys)
 
 ## How to use
 
-0. **BACKUP YOUR PROJECT FIRST!**
+0. **BACKUP YOUR PROJECT FIRST!**, place TextMeshProAutoConverter.cs in an Editor folder (Assets/Editor/)
 1. Go to Tools menu, and click on TextMeshPro AutoConverter  
 ![1](https://i.imgur.com/07y7LVa.png)  
 2. Enter amount of text assets to be replaced  

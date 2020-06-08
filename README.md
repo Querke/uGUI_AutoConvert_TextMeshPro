@@ -1,6 +1,6 @@
 
 # uGUI_AutoConvert_TextMeshPro
-![gif](https://i.imgur.com/A3Gx71W.gif)  
+![gif](https://i.imgur.com/zo7EOJY.gif)  
 Helper Tool to automatically convert all of your Unity Text and InputFields to TextMeshPro equivalent components
 
 **Warning**: To use this tool, you need to place the script inside an Editor folder

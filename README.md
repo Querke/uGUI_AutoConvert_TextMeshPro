@@ -1,13 +1,13 @@
 
 # uGUI_AutoConvert_TextMeshPro
-![gif](https://i.imgur.com/IqH68Rj.gif)
+![gif](https://i.imgur.com/IqH68Rj.gif)  
 Helper Tool to automatically convert all of your Unity Text and InputFields to TextMeshPro equivalent components
 
-Warning: This script might contain bugs, as it is a result of a community effort
-Warning: You have to manually rename all your uGUI Text and InputFields in your script, and reference the new TextMeshPro components
+**Warning**: This script might contain bugs, as it is a result of a community effort  
+**Warning**: You have to manually rename all your uGUI Text and InputFields in your script, and reference the new TextMeshPro components  
 
-This script was originally created by: BRUNO MIKOSKI (http://www.brunomikoski.com/playground/2015/3/31/convert-text-component-to-textmeshprougui-keeping-configurations)
-The script was then modified by: SIMON TYSLAND (https://tinyurl.com/simtys)
+This script was originally created by: BRUNO MIKOSKI (http://www.brunomikoski.com/playground/2015/3/31/convert-text-component-to-textmeshprougui-keeping-configurations)  
+The script was then modified by: SIMON TYSLAND (https://tinyurl.com/simtys)  
 
 
 ## How to use

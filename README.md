@@ -13,8 +13,9 @@ The script was then modified by: SIMON TYSLAND (https://tinyurl.com/simtys)
 
 ## How to use
 
--1. **BACKUP YOUR PROJECT FIRST!**, so you can roll back changes if you something breaks
-0. Download TextMeshProAutoConverter.cs and place the script in an Editor folder (Assets/Editor/)
+**BACKUP YOUR PROJECT FIRST!**, so you can roll back changes if you something breaks  
+Download TextMeshProAutoConverter.cs and place the script in an Editor folder (Assets/Editor/)  
+
 1. Go to Tools menu, and click on TextMeshPro AutoConverter  
 ![1](https://i.imgur.com/07y7LVa.png)  
 2. Enter amount of text assets to be replaced  
